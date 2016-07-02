@@ -10,5 +10,6 @@ int digitalRead(int pin);
 void digitalWrite(int pin, int signal);
 void pinMode(int pin, int mode);
 void delayMicroseconds(int ammount);
+unsigned long micros();
 
 int random(int a, int b);
