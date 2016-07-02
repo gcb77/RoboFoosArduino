@@ -7,6 +7,7 @@ const int Y_STEP_PIN = 3;
 const int Y_DIR_PIN = 6;
 const int DISABLE_PIN = 8;
 const int X_ENDSTOP_PIN = 9;
+const int Y_ENDSTOP_PIN = 10;
 
 const int STEPS_BUFFER_SIZE = 10000;
 
@@ -113,6 +114,37 @@ void scheduleSteps(int steps, int dir, int *buffer) {
   }
 }
 
+long doStep(unsigned long current_micros, int dir_pin, int step_pin, int *buffer, int *pos, int *pos_end) {
+  //Enable motors
+  digitalWrite(DISABLE_PIN, LOW);
+
+  //Set the direction pin based on -/+ value of step
+  if(*(buffer+*pos) < 0) {
+    digitalWrite(dir_pin, LOW);
+  } else {
+    digitalWrite(dir_pin, HIGH);
+  }
+
+  //Turn on the step pin and hold it for 20 microseconds
+  digitalWrite(step_pin, HIGH);
+  delayMicroseconds(20);
+  digitalWrite(step_pin, LOW);
+
+  //Disable motors
+  digitalWrite(DISABLE_PIN, HIGH);
+
+  //Increment the step and check if we have more input
+  *pos += 1;
+  if(*pos < *pos_end) {
+    return current_micros + *(buffer+*pos);
+  } else {
+    //Done with steps, reset it all
+    *pos = 0;
+    *pos_end = 0;
+    return 0;
+  }
+}
+
 void loop() {
   //Process serial input
   if(Serial.available()){
@@ -131,45 +163,16 @@ void loop() {
     Serial.println(step_time);
   }
 
-
-  //Check to see if we're active
+  //Check to see if the X axis is active
   if(is_active > 0 || digitalRead(X_ENDSTOP_PIN) == HIGH) {
+    //Get current time
+    current_micros = micros();
 
     //Check to see if current steps are being processed
     if(x_step_end > 0) {
-      //Get current time
-      current_micros = micros();
-
       //Check to see if its time for the next X pulse
       if(current_micros > x_next_pulse_time) {
-
-        //Enable motors
-        digitalWrite(DISABLE_PIN, LOW);
-
-        //Set the direction pin based on -/+ value of step
-        if(x_steps_buffer[x_step_pos] < 0) {
-          digitalWrite(X_DIR_PIN, LOW);
-        } else {
-          digitalWrite(X_DIR_PIN, HIGH);
-        }
-
-        //Turn on the step pin and hold it for 20 microseconds
-        digitalWrite(X_STEP_PIN, HIGH);
-        delayMicroseconds(20);
-        digitalWrite(X_STEP_PIN, LOW);
-
-        //Disable motors
-        digitalWrite(DISABLE_PIN, HIGH);
-
-        //Increment the step and check if we have more input
-        x_step_pos += 1;
-        if(x_step_pos < x_step_end) {
-          x_next_pulse_time = current_micros + x_steps_buffer[x_step_pos];
-        } else {
-          //Done with steps, reset it all
-          x_step_pos = 0;
-          x_step_end = 0;
-        }
+        x_next_pulse_time = doStep(current_micros, X_DIR_PIN, X_STEP_PIN, x_steps_buffer, &x_step_pos, &x_step_end);
       }
     } else {
       int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
@@ -179,7 +182,27 @@ void loop() {
       scheduleSteps(x_steps, HIGH, x_steps_buffer+x_steps);
       x_step_end = x_steps * 2;
     }
-    //TODO: do Y
+  }
+
+ //Do the same for the Y axis
+  if(is_active > 0 || digitalRead(Y_ENDSTOP_PIN) == HIGH) {
+    //Get current time
+    current_micros = micros();
+
+    //Check to see if current steps are being processed
+    if(y_step_end > 0) {
+      //Check to see if its time for the next X pulse
+      if(current_micros > y_next_pulse_time) {
+        y_next_pulse_time = doStep(current_micros, Y_DIR_PIN, Y_STEP_PIN, y_steps_buffer, &y_step_pos, &y_step_end);
+      }
+    } else {
+      int y_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
+      //Prevent a buffer overrun
+      if(y_steps > STEPS_BUFFER_SIZE/2)  y_steps = STEPS_BUFFER_SIZE/2;
+      scheduleSteps(y_steps, LOW, y_steps_buffer);
+      scheduleSteps(y_steps, HIGH, y_steps_buffer+y_steps);
+      y_step_end = y_steps * 2;
+    }
   } else {
     //Stop all movement and clear all move buffers
     digitalWrite(DISABLE_PIN, HIGH);
