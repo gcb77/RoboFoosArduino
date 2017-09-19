@@ -5,7 +5,7 @@
 #define OUTPUT 1
 
 void setup();
-long millis();
+long micros();
 void loop();
 int digitalRead(int pin);
 void digitalWrite(int pin, int signal);

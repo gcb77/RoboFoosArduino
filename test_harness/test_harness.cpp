@@ -22,7 +22,7 @@ void pinMode(int pin, int mode) {
     printf("Setting mode %d on pin %d\n", mode, pin);
 }
 
-long millis() {
+long micros() {
     clockTime++;
 }
 

@@ -26,6 +26,7 @@ typedef struct status_struct {
 } status;
 
 status motor1Status;
+status motor2Status;
 
 void setup() {
   pinMode(X_STEP_PIN, OUTPUT);
@@ -74,16 +75,16 @@ void go(int steps, int dir) {
 }
 
 
-void goNew(int steps, int dir) {
-  motor1Status.numSteps = steps;
-  motor1Status.currentStep = 0;
-  motor1Status.dir = dir;
-  motor1Status.upDown = 0;
-  motor1Status.last = micros();
-  motor1Status.next = motor1Status.last;
+void goNew(int steps, int dir, status *motStatus) {
+  motStatus->numSteps = steps;
+  motStatus->currentStep = 0;
+  motStatus->dir = dir;
+  motStatus->upDown = 0;
+  motStatus->last = micros();
+  motStatus->next = motor1Status.last;
 }
 
-void checkMaps() {
+void checkMaps(status *motStatus) {
   long cTime = micros();
 
   //Serial.print("C:");
@@ -93,32 +94,32 @@ void checkMaps() {
   //Serial.println("");
 
   //Only do stuff if the time is right
-  digitalWrite(X_DIR_PIN, motor1Status.dir);
-  if(motor1Status.next <= cTime) {
-    if(motor1Status.currentStep > motor1Status.numSteps && motor1Status.upDown == 0) {
+  digitalWrite(X_DIR_PIN, motStatus->dir);
+  if(motStatus->next <= cTime) {
+    if(motStatus->currentStep > motStatus->numSteps && motStatus->upDown == 0) {
       //Motor finished the current steps
-      if(motor1Status.dir == LOW) {
+      if(motStatus->dir == LOW) {
         //Set to high for the return
-        motor1Status.dir = HIGH;
-        motor1Status.currentStep = 0;
+        motStatus->dir = HIGH;
+        motStatus->currentStep = 0;
       } else {
         //This was the return, so reset to 0
-        motor1Status.numSteps = 0;
-        motor1Status.currentStep = 0;
+        motStatus->numSteps = 0;
+        motStatus->currentStep = 0;
       }
     } else {
-      motor1Status.last = cTime;
-      if(motor1Status.upDown == 0) {
-        motor1Status.upDown = 1;
+      motStatus->last = cTime;
+      if(motStatus->upDown == 0) {
+        motStatus->upDown = 1;
         digitalWrite(X_STEP_PIN, HIGH);
-        motor1Status.next = cTime + 20;
+        motStatus->next = cTime + 20;
       } else {
-        motor1Status.upDown = 0;
+        motStatus->upDown = 0;
         digitalWrite(X_STEP_PIN, LOW);
-        motor1Status.next = cTime + 150;
-        motor1Status.currentStep++;
+        motStatus->next = cTime + 150;
+        motStatus->currentStep++;
        // Serial.print("Step: ");
-       // Serial.println(motor1Status.currentStep);
+       // Serial.println(motStatus->currentStep);
       }
     }
   }
@@ -145,9 +146,14 @@ void loop() {
 
     //Initialize maps to move rod
     if(motor1Status.numSteps == 0) {
-       int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
-       Serial.println("Calling goNew");
-       goNew(x_steps, LOW);
+      int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
+      Serial.println("Calling goNew for 1");
+      goNew(x_steps, LOW, &motor1Status);
+    }
+    if(motor2Status.numSteps == 0) {
+      int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
+      Serial.println("Calling goNew for 2");
+      goNew(x_steps, LOW, &motor2Status);
     }
     // int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
     // go(x_steps, LOW);
@@ -155,7 +161,8 @@ void loop() {
     // digitalWrite(DISABLE_PIN, HIGH);
 
     // Check maps and move rods
-    checkMaps();
+    checkMaps(&motor1Status);
+    checkMaps(&motor2Status);
   }
   else {
     digitalWrite(DISABLE_PIN, HIGH);
