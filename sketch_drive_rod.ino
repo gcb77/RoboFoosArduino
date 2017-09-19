@@ -79,12 +79,12 @@ void goNew(int steps, int dir) {
   motor1Status.currentStep = 0;
   motor1Status.dir = dir;
   motor1Status.upDown = 0;
-  motor1Status.last = millis();
+  motor1Status.last = micros();
   motor1Status.next = motor1Status.last;
 }
 
 void checkMaps() {
-  long cTime = millis();
+  long cTime = micros();
 
   //Serial.print("C:");
   //Serial.print(cTime);
@@ -115,8 +115,10 @@ void checkMaps() {
       } else {
         motor1Status.upDown = 0;
         digitalWrite(X_STEP_PIN, LOW);
-        motor1Status.next = cTime + 300;
+        motor1Status.next = cTime + 150;
         motor1Status.currentStep++;
+       // Serial.print("Step: ");
+       // Serial.println(motor1Status.currentStep);
       }
     }
   }
