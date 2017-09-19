@@ -90,7 +90,7 @@ void checkMaps(struct status_struct *motStatus) {
         delay = step_time;
         if(motStatus->burnDelay > 0) {
           delay += motStatus->burnDelay;
-          motStatus->burnDelay -= 50;
+          motStatus->burnDelay -= 5;
         }
         motStatus->next = cTime + delay;
 
@@ -121,12 +121,12 @@ void loop() {
 
     //Initialize maps to move rod
     if(motor1Status.numSteps == 0) {
-      int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
+      int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.0);
       //Serial.println("Calling goNew for 1");
       goNew(x_steps, LOW, &motor1Status);
     }
     if(motor2Status.numSteps == 0) {
-      int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
+      int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.0);
      // Serial.println("Calling goNew for 2");
       goNew(x_steps, LOW, &motor2Status);
     }
