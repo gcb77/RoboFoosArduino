@@ -23,6 +23,7 @@ typedef struct status_struct {
   int dirPin;
   int stepPin;
   int upDown;
+  int burnDelay;
   long last;
   long next;
 } status;
@@ -47,57 +48,21 @@ void setup() {
   is_active = 0;
 }
 
-void go(int steps, int dir) {
-  int accel_steps = 0;
-  int hold_time = 1000;
-  int accel_time = 2;
-
-
-  digitalWrite(X_DIR_PIN, dir);
-  //digitalWrite(Y_DIR_PIN, dir);
-
-  for (int i = 0; i < steps; i++){
-    //determine pulse time
-    if(i > steps - accel_steps) {
-      //In decelleration phase
-      hold_time += accel_time;
-    }
-    else if(hold_time > step_time) {
-      //In accelleration phase
-      hold_time -= accel_time;
-    }
-    else if(hold_time < step_time) {
-      hold_time = step_time;
-    }
-    //pulse the motor
-    digitalWrite(X_STEP_PIN, HIGH);
-    //digitalWrite(Y_STEP_PIN, HIGH);
-    delayMicroseconds(20);
-    digitalWrite(X_STEP_PIN, LOW);
-    //digitalWrite(Y_STEP_PIN, LOW);
-    delayMicroseconds((hold_time)-20);
-  }
-  //digitalWrite(DISABLE_PIN, HIGH);
-}
-
-
 void goNew(int steps, int dir, struct status_struct *motStatus) {
   motStatus->numSteps = steps;
   motStatus->currentStep = 0;
   motStatus->dir = dir;
   motStatus->upDown = 0;
+  motStatus->burnDelay = 1000;
   motStatus->last = micros();
   motStatus->next = motor1Status.last;
 }
 
 void checkMaps(struct status_struct *motStatus) {
-  long cTime = micros();
+  long cTime = motStatus->last;
+  motStatus->last = micros();
 
-  //Serial.print("C:");
-  //Serial.print(cTime);
-  //Serial.print(" N:");
-  //Serial.print(motor1Status.next);
-  //Serial.println("");
+  int delay = 0;
 
   //Only do stuff if the time is right
   digitalWrite(motStatus->dirPin, motStatus->dir);
@@ -114,7 +79,6 @@ void checkMaps(struct status_struct *motStatus) {
         motStatus->currentStep = 0;
       }
     } else {
-      motStatus->last = cTime;
       if(motStatus->upDown == 0) {
         motStatus->upDown = 1;
         digitalWrite(motStatus->stepPin, HIGH);
@@ -122,10 +86,15 @@ void checkMaps(struct status_struct *motStatus) {
       } else {
         motStatus->upDown = 0;
         digitalWrite(motStatus->stepPin, LOW);
-        motStatus->next = cTime + 100;
+
+        delay = step_time;
+        if(motStatus->burnDelay > 0) {
+          delay += motStatus->burnDelay;
+          motStatus->burnDelay -= 50;
+        }
+        motStatus->next = cTime + delay;
+
         motStatus->currentStep++;
-       // Serial.print("Step: ");
-       // Serial.println(motStatus->currentStep);
       }
     }
   }
@@ -135,8 +104,8 @@ void loop() {
   if(Serial.available()){
     char c = Serial.read();
     int n = c-48;
-    //Serial.print("N is ");
-    //Serial.println(n);
+    Serial.print("N is ");
+    Serial.println(n);
     if(n == 0) {
       is_active = 0;
     }
@@ -161,10 +130,6 @@ void loop() {
       Serial.println("Calling goNew for 2");
       goNew(x_steps, LOW, &motor2Status);
     }
-    // int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
-    // go(x_steps, LOW);
-    // go(x_steps, HIGH);
-    // digitalWrite(DISABLE_PIN, HIGH);
 
     // Check maps and move rods
     checkMaps(&motor1Status);
@@ -173,7 +138,6 @@ void loop() {
   else {
     digitalWrite(DISABLE_PIN, HIGH);
   }
-  //Serial.println(motor1Status.currentStep);
 }
 
 
