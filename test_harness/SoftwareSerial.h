@@ -2,6 +2,7 @@ class SerialClass {
     public:
       static void begin(int baudRate);
       static void print(const char *str);
+      static void print(long);
       static void println(const char *str);
       static void println(int);
       static int available();

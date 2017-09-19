@@ -3,8 +3,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 SerialClass Serial;
+
+long clockTime = 0;
 
 int digitalRead(int pin) {
     printf("Reading pin %d\n", pin);
@@ -17,6 +20,10 @@ void digitalWrite(int pin, int value) {
 
 void pinMode(int pin, int mode) {
     printf("Setting mode %d on pin %d\n", mode, pin);
+}
+
+long millis() {
+    clockTime++;
 }
 
 void delayMicroseconds(int ammount) {
@@ -34,15 +41,19 @@ void SerialClass::begin(int baudRate) {
 }
 
 void SerialClass::print(const char *str) {
-    printf("Serial print: %s", str);
+    printf("%s", str);
 }
 
 void SerialClass::println(const char *str) {
-    printf("Serial print: %s\n", str);
+    printf("%s\n", str);
 }
 
 void SerialClass::println(int val) {
-    printf("Serial print: %d\n", val);
+    printf("%d\n", val);
+}
+
+void SerialClass::print(long val) {
+    printf("%d", val);
 }
 
 int SerialClass::available() {
@@ -54,8 +65,10 @@ char SerialClass::read() {
 }
 
 int main(void) {
+    int num = 10000;
     setup();
-    loop();
-    loop();
-    loop();
+    while(num-- > 0) {
+      clockTime++;
+      loop();
+    }
 }
