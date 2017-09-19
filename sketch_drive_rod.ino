@@ -122,12 +122,12 @@ void loop() {
     //Initialize maps to move rod
     if(motor1Status.numSteps == 0) {
       int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
-      Serial.println("Calling goNew for 1");
+      //Serial.println("Calling goNew for 1");
       goNew(x_steps, LOW, &motor1Status);
     }
     if(motor2Status.numSteps == 0) {
       int x_steps = random(STEPS_PER_ROTATION/10, STEPS_PER_ROTATION * 1.5);
-      Serial.println("Calling goNew for 2");
+     // Serial.println("Calling goNew for 2");
       goNew(x_steps, LOW, &motor2Status);
     }
 
