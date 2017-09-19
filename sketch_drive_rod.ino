@@ -20,6 +20,8 @@ typedef struct status_struct {
   int numSteps;
   int currentStep;
   int dir;
+  int dirPin;
+  int stepPin;
   int upDown;
   long last;
   long next;
@@ -35,6 +37,10 @@ void setup() {
   pinMode(Y_DIR_PIN, OUTPUT);
   pinMode(DISABLE_PIN, OUTPUT);
   pinMode(X_ENDSTOP_PIN, INPUT);
+  motor1Status.stepPin = X_STEP_PIN;
+  motor1Status.dirPin = X_DIR_PIN;
+  motor2Status.stepPin = Y_STEP_PIN;
+  motor2Status.dirPin = Y_DIR_PIN;
   Serial.begin(57600);
   Serial.println("RoboFoos Ready! Enter 1-9 to run with different delays, 0 to stop!");
   digitalWrite(X_DIR_PIN, HIGH);
@@ -75,7 +81,7 @@ void go(int steps, int dir) {
 }
 
 
-void goNew(int steps, int dir, status *motStatus) {
+void goNew(int steps, int dir, struct status_struct *motStatus) {
   motStatus->numSteps = steps;
   motStatus->currentStep = 0;
   motStatus->dir = dir;
@@ -84,7 +90,7 @@ void goNew(int steps, int dir, status *motStatus) {
   motStatus->next = motor1Status.last;
 }
 
-void checkMaps(status *motStatus) {
+void checkMaps(struct status_struct *motStatus) {
   long cTime = micros();
 
   //Serial.print("C:");
@@ -94,7 +100,7 @@ void checkMaps(status *motStatus) {
   //Serial.println("");
 
   //Only do stuff if the time is right
-  digitalWrite(X_DIR_PIN, motStatus->dir);
+  digitalWrite(motStatus->dirPin, motStatus->dir);
   if(motStatus->next <= cTime) {
     if(motStatus->currentStep > motStatus->numSteps && motStatus->upDown == 0) {
       //Motor finished the current steps
@@ -111,12 +117,12 @@ void checkMaps(status *motStatus) {
       motStatus->last = cTime;
       if(motStatus->upDown == 0) {
         motStatus->upDown = 1;
-        digitalWrite(X_STEP_PIN, HIGH);
+        digitalWrite(motStatus->stepPin, HIGH);
         motStatus->next = cTime + 20;
       } else {
         motStatus->upDown = 0;
-        digitalWrite(X_STEP_PIN, LOW);
-        motStatus->next = cTime + 150;
+        digitalWrite(motStatus->stepPin, LOW);
+        motStatus->next = cTime + 100;
         motStatus->currentStep++;
        // Serial.print("Step: ");
        // Serial.println(motStatus->currentStep);
